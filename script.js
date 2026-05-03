@@ -1,179 +1,121 @@
 /**
  * script.js — 2KRAZZY Streetwear Website
- * Improved by AI • Business info integrated • WA number updated
  *
  * Sections
  *  1.  Constants & SVG snippets
  *  2.  Data — product categories, reviews, UGC photos
  *  3.  Cart state & helpers
  *  4.  Cart drawer — open / close / render
- *  5.  Product card rendering
- *  6.  Section rendering (categories, UGC, testimonials)
- *  7.  Toast notifications
- *  8.  Testimonial slider
- *  9.  Waitlist form
- * 10.  Hamburger / mobile menu
- * 11.  Theme toggle (dark ↔ light)
- * 12.  Smooth scroll
- * 13.  Scroll-reveal (IntersectionObserver)
- * 14.  Navbar scroll shadow
- * 15.  Logo image injection
- * 16.  Initialisation
+ *  5.  Product card rendering (one card per category)
+ *  6.  Variant panel — slide-in detail view with colour switcher
+ *  7.  Section rendering
+ *  8.  Toast notifications
+ *  9.  Testimonial slider
+ * 10.  Waitlist form
+ * 11.  Hamburger / mobile menu
+ * 12.  Theme toggle
+ * 13.  Smooth scroll
+ * 14.  Scroll-reveal
+ * 15.  Navbar scroll shadow
+ * 16.  Logo injection
+ * 17.  Initialisation
  */
 
 
 /* =============================================================
    1. CONSTANTS & SVG SNIPPETS
-   Reusable SVG strings so we're not duplicating markup inside
-   every template literal.
    ============================================================= */
 
-/** Real business WhatsApp number */
 const WA_NUMBER = '2349122253796';
 
-/**
- * WhatsApp icon SVG (12 × 12).
- * References the #icon-wa symbol defined once in index.html <defs>.
- * No path coordinates needed here — the shape lives in one place only.
- */
 const SVG_WA_SMALL = `<svg width="12" height="12" aria-hidden="true"><use href="#icon-wa"/></svg>`;
 
-/** Shopping-bag icon SVG (stroke) */
-const SVG_CART = `
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-       stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-       aria-hidden="true">
-    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
-    <path d="M16 10a4 4 0 01-8 0"/>
-  </svg>`;
+const SVG_CART = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M16 10a4 4 0 01-8 0"/></svg>`;
 
-/** Checkmark icon SVG (stroke) */
-const SVG_CHECK = `
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-       stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-       aria-hidden="true">
-    <polyline points="20 6 9 17 4 12"/>
-  </svg>`;
+const SVG_CHECK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`;
 
-/** Plus icon SVG (stroke) */
-const SVG_PLUS = `
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-       stroke-width="2.5" aria-hidden="true">
-    <line x1="12" y1="5" x2="12" y2="19"/>
-    <line x1="5"  y1="12" x2="19" y2="12"/>
-  </svg>`;
+const SVG_PLUS = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+
+const SVG_CLOSE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+
+const SVG_ARROW_LEFT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>`;
 
 
 /* =============================================================
    2. DATA
    ============================================================= */
 
-/**
- * Product categories.
- * Each category maps to a <section> rendered by renderSections().
- *
- * Product shape:
- *   id     {string}  — unique key used as the cart key and image filename hint
- *   name   {string}  — display name
- *   tag    {string}  — sub-label (e.g. "Oversized Hoodie")
- *   price  {number}  — price in Naira (no symbol)
- *   badge  {string}  — badge text: "HOT" | "NEW" | "BESTSELLER" | "SOON"
- *   bc     {string}  — badge CSS class key: "bh" | "bn" | "bb" | "bs"
- *   stars  {number}  — 1–5
- *   rev    {number}  — review count
- *   emoji  {string}  — placeholder emoji shown before real photos are added
- */
 const CATEGORIES = [
   {
-    id: 'hoodies', num: '002', title: 'MATCHING SETS', alt: false,
+    id: 'tracksuit', num: '002', title: '2KRAZZY TRACKSUITS', alt: false,
     products: [
-      { id: 'h1', name: 'Krazzy Co-ord Set',     tag: 'Oversized Set',    price: 65000, badge: 'HOT',        bc: 'bh', stars: 5, rev: 142, image:"images/matching.jpg" },
-      { id: 'h2', name: 'Krazzy Nebula Set',  tag: 'Matching Set',  price: 58000, badge: 'NEW',        bc: 'bn', stars: 5, rev: 89,   image:"images/Nebula-set.jpg" },
-      { id: 'h3', name: 'Krazzy Voltage Set',     tag: 'Matching Set',       price: 72000, badge: 'SOON',       bc: 'bs', stars: 4, rev: 12,   image:"images/Voltage-set.jpg" },
+      { id: 'h1', name: ' 2KRAZZY TRACKSUITS',     tag: 'DRIP IN MOTION',   price: 80000, badge: 'SOON',        bc: 'bh', stars: 5, rev: 142, image: 'images/Track-suit-black.png',    color: 'Black',   desc: 'Clean, bold, and timeless. A versatile tracksuit that delivers effortless style and all-day comfort. COMING SOON.' },
+      { id: 'h2', name: '2KRAZZY TRACKSUITS',      tag: 'DRIP IN MOTION',    price: 80000, badge: 'SOON',        bc: 'bn', stars: 5, rev: 89,  image: 'images/Track-suit-green.png',  color: 'Green',  desc: 'Fresh and standout. Brings a unique edge while keeping comfort and style on point. COMING SOON.' },
+      { id: 'h3', name: '2KRAZZY TRACKSUITS',     tag: 'DRIP IN MOTION',    price: 80000, badge: 'SOON',       bc: 'bs', stars: 4, rev: 12,  image: 'images/Track-suit-red.png', color: 'Red', desc: 'Confident and eye-catching. Designed to stand out with a bold, stylish finish. COMING SOON.' },
+       { id: 'h4', name: '2KRAZZY TRACKSUITS',     tag: 'DRIP IN MOTION',    price: 80000, badge: 'SOON',       bc: 'bs', stars: 4, rev: 12,  image: 'images/Track-suit-purple.png', color: 'Purple', desc: 'Smooth and distinctive. A refined look with a touch of uniqueness and comfort. COMING SOON.' },
+      { id: 'h4', name: '2KRAZZY TRACKSUITS',     tag: 'DRIP IN MOTION',    price: 80000, badge: 'SOON',       bc: 'bs', stars: 4, rev: 12,  image: 'images/Track-suit-blue.png', color: 'Blue', desc: 'Cool abd Classic. Easy to wear, combining relaxed comfort with a sharp look. COMING SOON.' },
     ],
   },
   {
-    id: 'tees', num: '003', title: 'GRAPHIC TEES', alt: true,
+    id: 'cadet', num: '003', title: 'CADET CAPS', alt: true,
     products: [
-      { id: 't1', name: 'Krazzy Gray Tee',   tag: 'Oversized Tee', price: 28500, badge: 'BESTSELLER', bc: 'bb', stars: 5, rev: 217,  image:"images/Shirt.jpg" },
-      { id: 't2', name: 'Krazzy Blue Tee',     tag: 'Graphic Tee',       price: 24000, badge: 'NEW',        bc: 'bn', stars: 5, rev: 104, image:"images/Shirt2.jpg" },
-      { id: 't3', name: 'Krazzy Pink Tee',    tag: 'Premium Tee',       price: 26500, badge: 'HOT',        bc: 'bh', stars: 5, rev: 67,  image:"images/Shirt3.jpg" },
-      { id: 't4', name: 'Danfo Driver Tee',  tag: 'Oversized Tee',     price: 22000, badge: 'SOON',       bc: 'bs', stars: 4, rev: 8,   image:"images/Shirt4.jpg" },
+      { id: 't1', name: 'Krazzy Cadet Cap',     tag: 'top off your style', price: 20000, badge: 'AVAILABLE', bc: 'bb', stars: 5, rev: 217, image: 'images/Cadet-cap-blue.png',  color: 'Blue',  desc: 'Cool and laid-back .Brings a fresh touch to your style with all-day comfort.' },
+      { id: 't2', name: 'Krazzy Cadet Cap',     tag: 'top off your style',   price: 20000, badge: 'AVAILABLE',        bc: 'bn', stars: 5, rev: 104, image: 'images/Cadet-cap-green.png', color: 'Green',  desc: 'Bold yet natural .Adds a subtle standout vibe while staying easy to wear.' },
+      { id: 't3', name: 'Krazzy Cadet Cap',     tag: 'top off your style',   price: 20000, badge: 'AVAILABLE',        bc: 'bh', stars: 5, rev: 67,  image: 'images/Cadet-cap-black.png', color: 'Black',  desc: "Don't sleep on Black. Bold graphic, statement colour, Staying sharp. Pairs with everything." },
+      { id: 't4', name: 'Krazzy Cadet Cap',    tag: 'top off your style', price: 20000, badge: 'AVAILABLE',       bc: 'bs', stars: 4, rev: 8,   image: 'images/Cadet-cap-camo.png', color: 'Camo', desc: 'Rugged and street-ready. Built to stand out with a strong, confident edge.' },
     ],
   },
   {
-    id: 'bottoms', num: '004', title: 'FEMALE WEARS', alt: false,
+    id: 'box-tees', num: '004', title: 'BOX TEES', alt: false,
     products: [
-      { id: 'b1', name: 'Krazzy Venom Crop',  tag: 'Female Shirt',        price: 58000, badge: 'HOT',  bc: 'bh', stars: 5, rev: 89, image:"images/Female3.jpg" },
-      { id: 'b2', name: 'Krazzy Skeleton Romper',   tag: 'Romper', price: 42000, badge: 'NEW',  bc: 'bn', stars: 5, rev: 56, image:"images/Female.jpg" },
-      { id: 'b3', name: 'Krazzy Grills Crop', tag: 'Female Shirt',     price: 54000, badge: 'SOON', bc: 'bs', stars: 4, rev: 5,  image:"images/Female2.jpg" },
+      { id: 'b1', name: '2Krazzy Box Tees',      tag: 'Wide fit. clean drip', price: 40000, badge: 'SOON',  bc: 'bh', stars: 5, rev: 89, image: 'images/Box-tee-black.png', color: 'Black',   desc: 'Deep, bold, and minimal. A staplepiece that works with anything and never misses. COMING SOON' },
+      { id: 'b2', name: '2Krazzy Box Tees ', tag: 'Wide fit. clean drip',       price: 40000, badge: 'SOON',  bc: 'bn', stars: 5, rev: 56, image: 'images/Box-tee-white.png',  color: 'White',    desc: 'Pure and clean. a fresh essential that keeps your look sharp and effortless. COMING SOON' },
+      { id: 'b3', name: '2Krazzy Box Tees',     tag: 'Wide fit. clean drip', price: 40000, badge: 'SOON', bc: 'bs', stars: 4, rev: 5,  image: 'images/Box-tee-blue.png', color: 'Blue', desc: 'Calm but strong. A solid everyday tee with a smooth easy going vibe. COMING SOON' },
+      { id: 'b4', name: '2Krazzy Box Tees',      tag: 'Wide fit. clean drip', price: 40000, badge: 'SOON',  bc: 'bh', stars: 5, rev: 89, image: 'images/Box-tee-pink.png', color: 'Pink',   desc: 'Soft tone, loud presence. Adds personality without doing too much. COMING SOON' },
+      { id: 'b5', name: '2Krazzy Box Tees', tag: 'Wide fit. clean drip',       price: 40000, badge: 'SOON',  bc: 'bn', stars: 5, rev: 56, image: 'images/Box-tee-skyBlue.png',  color: 'Light Blue',    desc: 'Cool and light. A relaxed shade that keeps your fit easy and fresh. COMING SOON' },
+      { id: 'b6', name: '2Krazzy Box Tees',     tag: 'Wide fit. clean drip', price: 40000, badge: 'SOON', bc: 'bs', stars: 4, rev: 5,  image: 'images/Box-tee-LightPink.png', color: 'Light Pink', desc: 'Subtle and clean. A soft finish that stands out in its own way. COMING SOON' },
     ],
   },
   {
-    id: 'outerwear', num: '005', title: 'POLO', alt: true,
+    id: 'Cap', num: '005', title: 'FACE CAP', alt: true,
     products: [
-      { id: 'o1', name: 'Krazzy Black Polo',        tag: 'POLO', price: 95000,  badge: 'SOON', bc: 'bs', stars: 5, rev: 38, image:"images/polo.jpg" },
-      { id: 'o2', name: 'Krazzy White Polo',          tag: 'POLO',     price: 110000, badge: 'SOON', bc: 'bs', stars: 5, rev: 14, image:"images/polo2.jpg" },
-      { id: 'o3', name: 'Krazzy Pink Polo', tag: 'POLO',      price: 78000,  badge: 'SOON', bc: 'bs', stars: 4, rev: 7,  image:"images/polo3.jpg" },
+      { id: 'o1', name: 'Krazzy Face Cap', tag: 'Top it off right', price: 12000,  badge: 'AVAILABLE', bc: 'bs', stars: 5, rev: 38, image: 'images/Face-cap-brown.png',  color: 'Brown', desc: 'Warm and Classic. A natural tone with effortless style.' },
+      { id: 'o2', name: 'Krazzy Face Cap', tag: 'Top it off right', price: 12000, badge: 'AVAILABLE', bc: 'bs', stars: 5, rev: 14, image: 'images/Face-cap-black.png', color: 'Black', desc: 'Sleek and timeless. Goes with everything, everytime.' },
+      { id: 'o3', name: 'Krazzy Face Cap',  tag: 'Top it off right', price: 12000,  badge: 'AVAILABLE', bc: 'bs', stars: 4, rev: 7,  image: 'images/Face-cap-brown-again.png', color: 'Brown',  desc: 'Soft and refined. A lighter tone for a clean, relaxed look.' },
+      { id: 'o3', name: 'Krazzy Face Cap',  tag: 'Top it off right', price: 12000,  badge: 'AVAILABLE', bc: 'bs', stars: 4, rev: 7,  image: 'images/Face-cap-red.png', color: 'Red',  desc: 'Bold and eye-catching. Made to stand out' },
     ],
   },
   {
     id: 'headwear', num: '006', title: 'CAPS & HEADWEAR', alt: false,
     products: [
-      { id: 'c1', name: 'Eko Atlantic Cap',  tag: 'Face-cap',    price: 18000, badge: 'NEW',        bc: 'bn', stars: 5, rev: 55,  image:"images/Face-cap.jpg" },
-      // { id: 'c2', name: '2krazzy 5-Panel',  tag: '5-Panel Cap', price: 15500, badge: 'BESTSELLER', bc: 'bb', stars: 5, rev: 143, emoji: '🧢' },
-      // { id: 'c3', name: 'Area Bucket Hat',  tag: 'Bucket Hat',  price: 20000, badge: 'NEW',        bc: 'bn', stars: 5, rev: 71,  emoji: '🎩' },
+      { id: 'c1', name: 'Eko Atlantic Cap', tag: 'Face-cap', price: 18000, badge: 'NEW', bc: 'bn', stars: 5, rev: 55, image: 'images/Face-cap.jpg', color: 'All Black', desc: 'Named after the new Lagos landmark. Structured 6-panel cap with embroidered 2K logo. Fits all heads.' },
     ],
   },
   {
     id: 'shorts', num: '007', title: 'TROUSERS', alt: true,
     products: [
-      { id: 's1', name: 'Krazzy 2K Crew Joggers',        tag: 'Trousers', price: 35000, badge: 'NEW',  bc: 'bn', stars: 5, rev: 74, image:"images/trouser2.jpg" },
-      { id: 's2', name: 'Krazzy 2K Goth Camo', tag: '3-Quarters',  price: 28000, badge: 'SOON', bc: 'bs', stars: 4, rev: 11, image:"images/trouser.jpg" },
+      { id: 's1', name: 'Krazzy 2K Crew Joggers', tag: 'Trousers',    price: 35000, badge: 'NEW',  bc: 'bn', stars: 5, rev: 74, image: 'images/trouser2.jpg', color: 'Cream', desc: 'Relaxed jogger silhouette with drawstring waist and embroidered crew branding. All-day comfort, all-day drip.' },
+      { id: 's2', name: 'Krazzy 2K Goth Camo',    tag: '3-Quarters',  price: 28000, badge: 'SOON', bc: 'bs', stars: 4, rev: 11, image: 'images/trouser.jpg',  color: 'Camo',  desc: 'Dark camo print on a cropped 3-quarter cut. Street energy meets outdoor adventure. Limited run.' },
     ],
   },
   {
     id: 'sets', num: '008', title: 'LONG-SLEEVES', alt: false,
     products: [
-      { id: 'st1', name: 'Krazzy Built Long-Sleeve',    tag: 'Long-Sleeve', price: 85000, badge: 'HOT',  bc: 'bh', stars: 5, rev: 62, image:"images/long-sleeve.jpg" },
-      { id: 'st2', name: 'Krazzy Skater Long-Sleeve',  tag: 'Long-Sleeve',   price: 92000, badge: 'SOON', bc: 'bs', stars: 5, rev: 9,  image:"images/long-sleeve2.jpg" },
+      { id: 'st1', name: 'Krazzy Built Long-Sleeve',   tag: 'Long-Sleeve', price: 85000, badge: 'HOT',  bc: 'bh', stars: 5, rev: 62, image: 'images/long-sleeve.jpg',  color: 'Black', desc: 'Heavy-weight long-sleeve with a statement graphic panel. Built for when the streets get cold.' },
+      { id: 'st2', name: 'Krazzy Skater Long-Sleeve',  tag: 'Long-Sleeve', price: 92000, badge: 'SOON', bc: 'bs', stars: 5, rev: 9,  image: 'images/long-sleeve2.jpg', color: 'Gray',  desc: 'Skate-culture inspired long-sleeve. Loose fit, dropped shoulders, all-over graphic placement.' },
     ],
   },
-  // {
-  //   id: 'accessories', num: '009', title: 'ACCESSORIES', alt: true,
-  //   products: [
-  //     { id: 'a1', name: 'Krazzy Canvas Bag', tag: 'Tote Bag',      price: 12000, badge: 'NEW',        bc: 'bn', stars: 5, rev: 88,  emoji: '👜' },
-  //     { id: 'a2', name: '2K Crossbody',      tag: 'Crossbody Bag', price: 24000, badge: 'SOON',       bc: 'bs', stars: 4, rev: 6,   emoji: '👜' },
-  //     { id: 'a3', name: 'Street Balaclava',  tag: 'Balaclava',     price: 9500,  badge: 'BESTSELLER', bc: 'bb', stars: 5, rev: 210, emoji: '🎭' },
-  //   ],
-  // },
-  // {
-  //   id: 'footwear', num: '010', title: 'FOOTWEAR', alt: false,
-  //   products: [
-  //     { id: 'f1', name: 'Eko Slide',    tag: 'Rubber Slide', price: 18500, badge: 'SOON', bc: 'bs', stars: 5, rev: 22, emoji: '🩴' },
-  //     { id: 'f2', name: 'Lagos Runner', tag: 'Sneaker',      price: 65000, badge: 'SOON', bc: 'bs', stars: 5, rev: 4,  emoji: '👟' },
-  //   ],
-  // },
-  // {
-  //   id: 'youth', num: '011', title: 'YOUTH LINE', alt: true,
-  //   products: [
-  //     { id: 'y1', name: 'Mini Krazzy Hoodie', tag: 'Kids Hoodie', price: 35000, badge: 'NEW', bc: 'bn', stars: 5, rev: 43, emoji: '🧥' },
-  //     { id: 'y2', name: 'Youth Krazzy Tee',   tag: 'Kids Tee',    price: 16000, badge: 'NEW', bc: 'bn', stars: 5, rev: 29, emoji: '👕' },
-  //   ],
-  // },
 ];
 
-/** Customer testimonials */
 const REVIEWS = [
   { text: 'This hoodie turns heads everywhere I go. Walked into a spot and everyone asked where I got it. Ordered 2 more immediately!', stars: 5, name: 'Emeka O.',    role: 'Anonymous Buyer · Lagos Island' },
   { text: '2krazzy is literally the best streetwear plug in Lagos. The Krazzy Wave Tee is divine — I get compliments every single day. Fast delivery too!', stars: 5, name: 'Adaeze N.',   role: 'Verified Buyer · Lekki' },
-  { text: 'The Area Boy Cargos fit exactly like what a Lagos boss should wear. 100% authentic quality. Nothing cheap here. I\'m loyal for life.', stars: 5, name: 'Dotun A.',    role: 'Repeat Buyer · Victoria Island' },
+  { text: "The Area Boy Cargos fit exactly like what a Lagos boss should wear. 100% authentic quality. Nothing cheap here. I'm loyal for life.", stars: 5, name: 'Dotun A.',    role: 'Repeat Buyer · Victoria Island' },
   { text: 'I was skeptical ordering online but they delivered right to my door and the packaging was so premium. The Lagos Hustle Hoodie is everything. 10/10.', stars: 5, name: 'Fatima K.',   role: 'First-Time Buyer · Abuja' },
   { text: 'E don happen! The quality is insane for the price. Fabric is heavy, stitching is clean, fits are perfect. 2krazzy no dey cap!', stars: 5, name: 'Seun B.',     role: 'Verified Buyer · Ikeja' },
   { text: "Sabi people dey wear 2krazzy. I wore the tee to an event and I couldn't count the compliments. Lagos streetwear has arrived!", stars: 5, name: 'Chidinma E.', role: 'Repeat Buyer · Surulere' },
 ];
 
-/** User-generated / community photos */
 const UGC_PHOTOS = [
   { img: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=600&q=80', handle: '@tunde_fits',   caption: 'Lagos boys on top 🔥 #2krazzy' },
   { img: 'https://images.unsplash.com/photo-1542219550-37153d387c27?w=600&q=80', handle: '@chioma_style',  caption: 'She goes krazzy different 💚' },
@@ -190,33 +132,24 @@ const UGC_PHOTOS = [
    3. CART STATE & HELPERS
    ============================================================= */
 
-/**
- * Cart object — keyed by product id.
- * Shape: { [productId]: { product: ProductObject, qty: number } }
- */
 let cart = {};
 
-/** Format a number as Naira (e.g. 65000 → "₦65,000") */
 function formatPrice(amount) {
   return '₦' + amount.toLocaleString('en-NG');
 }
 
-/** Return true if the product with this id is in the cart */
 function isInCart(productId) {
   return Boolean(cart[productId]);
 }
 
-/** Total number of individual items across all cart entries */
 function getTotalItems() {
   return Object.values(cart).reduce((sum, entry) => sum + entry.qty, 0);
 }
 
-/** Total price of all cart items */
 function getTotalPrice() {
   return Object.values(cart).reduce((sum, entry) => sum + entry.product.price * entry.qty, 0);
 }
 
-/** Add a product to the cart (or increment qty if already there) */
 function addToCart(product) {
   if (cart[product.id]) {
     cart[product.id].qty += 1;
@@ -225,30 +158,19 @@ function addToCart(product) {
   }
 }
 
-/** Remove a product from the cart entirely */
 function removeFromCart(productId) {
   delete cart[productId];
 }
 
-/**
- * Increment or decrement a cart item's qty.
- * Removes the item when qty drops to 0.
- */
 function changeQty(productId, delta) {
   if (!cart[productId]) return;
-
   cart[productId].qty += delta;
-
-  if (cart[productId].qty <= 0) {
-    removeFromCart(productId);
-  }
-
+  if (cart[productId].qty <= 0) removeFromCart(productId);
   renderCartDrawer();
   updateNavDot();
   refreshAllCartButtons();
 }
 
-/** Empty the entire cart */
 function clearCart() {
   cart = {};
   renderCartDrawer();
@@ -257,63 +179,39 @@ function clearCart() {
   showToast('Cart cleared');
 }
 
-/**
- * Toggle a product in / out of the cart.
- * Called by the Featured Drop card and by handleCardToggle().
- */
-function toggleCart(product, _buttonId) {
+function toggleCart(product) {
   if (isInCart(product.id)) {
     removeFromCart(product.id);
-    showToast(`"${product.name}" removed from cart`);
+    showToast(`"${product.name}" removed`);
   } else {
     addToCart(product);
-    showToast(`"${product.name}" added to cart! 🔥`);
+    showToast(`"${product.name}" added to cart`);
   }
-
   renderCartDrawer();
   updateNavDot();
+  refreshAllCartButtons();
+  syncPanelCartBtn();
 }
 
-/**
- * Refresh every button/icon on the page that tracks a cart item.
- * Loops over [data-cart-id] elements and updates classes + inner SVGs.
- */
 function refreshAllCartButtons() {
-  // Product-card quick-add and "Add" buttons
   document.querySelectorAll('[data-cart-id]').forEach((el) => {
     const inC = isInCart(el.dataset.cartId);
     el.classList.toggle('in-cart', inC);
-
     if (el.classList.contains('pcard-qadd')) {
       el.innerHTML = inC ? SVG_CHECK : SVG_PLUS;
       el.title = inC ? 'Remove from cart' : 'Add to cart';
     }
-
-    if (el.classList.contains('btn-cart-sm')) {
-      el.innerHTML = (inC ? SVG_CHECK : SVG_CART) +
-        `<span class="sm-lbl">${inC ? 'In Cart ✓' : 'Add'}</span>`;
-    }
   });
 
-  // Featured drop cart button (separate id, not data-cart-id)
   const featBtn = document.getElementById('feat-cart-btn');
   if (featBtn) {
     const inC = isInCart('feat-hoodie');
     featBtn.classList.toggle('in-cart', inC);
-
     const label = featBtn.querySelector('.cart-btn-lbl');
     if (label) label.textContent = inC ? 'Remove from Cart' : 'Add to Cart';
-
-    const svg = featBtn.querySelector('svg');
-    if (svg) {
-      svg.outerHTML = inC
-        ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`
-        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M16 10a4 4 0 01-8 0"/></svg>`;
-    }
   }
 }
 
-/** Update the cart count badge in the navbar */
 function updateNavDot() {
   const count = getTotalItems();
   const dot = document.getElementById('nav-dot');
@@ -339,45 +237,32 @@ function closeCart() {
   document.body.style.overflow = '';
 }
 
-/**
- * Build the pre-filled WhatsApp message for a full cart checkout.
- * Returns a URL-encoded string ready for wa.me.
- */
 function buildCartWhatsAppMessage() {
   const items = Object.values(cart);
   if (!items.length) return '';
-
   let message = "Hi 2krazzy! I'd like to order:\n\n";
   items.forEach(({ product, qty }) => {
     message += `• ${product.name} x${qty} — ${formatPrice(product.price * qty)}\n`;
   });
   message += `\nTotal: ${formatPrice(getTotalPrice())}`;
-
   return encodeURIComponent(message);
 }
 
-/**
- * Rebuild the cart drawer DOM.
- * Shows an empty-state when the cart has no items,
- * otherwise lists each item with qty controls.
- */
 function renderCartDrawer() {
-  const items      = Object.values(cart);
-  const itemsEl    = document.getElementById('cart-items');
-  const footerEl   = document.getElementById('cart-foot');
-  const countEl    = document.getElementById('cart-head-count');
-  const totalEl    = document.getElementById('cart-total');
-  const waLinkEl   = document.getElementById('cart-wa-link');
-  const itemCount  = getTotalItems();
+  const items     = Object.values(cart);
+  const itemsEl   = document.getElementById('cart-items');
+  const footerEl  = document.getElementById('cart-foot');
+  const countEl   = document.getElementById('cart-head-count');
+  const totalEl   = document.getElementById('cart-total');
+  const waLinkEl  = document.getElementById('cart-wa-link');
+  const itemCount = getTotalItems();
 
-  // Update header count label
   countEl.textContent = `${itemCount} item${itemCount !== 1 ? 's' : ''}`;
 
   if (!items.length) {
-    // Empty state
     itemsEl.innerHTML = `
       <div class="cart-empty">
-        <div class="ce-icon">🛒</div>
+        <div class="ce-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40" aria-hidden="true"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
         <p>Your cart is empty.<br />Start shopping!</p>
         <a href="#shop" onclick="closeCart()">Browse Drops</a>
       </div>`;
@@ -385,200 +270,291 @@ function renderCartDrawer() {
     return;
   }
 
-  // Items list
   footerEl.style.display = 'flex';
   totalEl.textContent = formatPrice(getTotalPrice());
   waLinkEl.href = `https://wa.me/${WA_NUMBER}?text=${buildCartWhatsAppMessage()}`;
 
   itemsEl.innerHTML = items.map(({ product, qty }) => `
     <div class="ci">
-      <div class="ci-emoji">${product.emoji || '🛍️'}</div>
-
+      <div class="ci-img">
+        ${product.image
+          ? `<img src="${product.image}" alt="${product.name}" />`
+          : `<span style="font-size:1.4rem">🛍️</span>`}
+      </div>
       <div class="ci-info">
         <div class="ci-name">${product.name}</div>
         <div class="ci-tag">${product.tag}</div>
         <div class="ci-price">${formatPrice(product.price)}</div>
       </div>
-
       <div class="ci-qty">
-        <button onclick="changeQty('${product.id}', -1)" aria-label="Decrease quantity">−</button>
+        <button onclick="changeQty('${product.id}', -1)" aria-label="Decrease">−</button>
         <span class="qty-n">${qty}</span>
-        <button onclick="changeQty('${product.id}', 1)"  aria-label="Increase quantity">+</button>
+        <button onclick="changeQty('${product.id}', 1)" aria-label="Increase">+</button>
       </div>
-
-      <button
-        class="ci-rm"
-        onclick="changeQty('${product.id}', -${qty})"
-        title="Remove item"
-        aria-label="Remove ${product.name} from cart"
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <line x1="18" y1="6"  x2="6"  y2="18"/>
-          <line x1="6"  y1="6"  x2="18" y2="18"/>
-        </svg>
+      <button class="ci-rm" onclick="changeQty('${product.id}', -${qty})" title="Remove">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 
 /* =============================================================
-   5. PRODUCT CARD RENDERING
+   5. PRODUCT CARD & SECTION RENDERING
    ============================================================= */
 
-/** Map badge key to its CSS class */
 function badgeClass(bc) {
   return { bh: 'bh', bn: 'bn', bb: 'bb', bs: 'bs' }[bc] || 'bs';
 }
 
-/** Generate a star string e.g. "★★★★☆" for 4 stars */
 function starString(count) {
   return '★'.repeat(count) + (count < 5 ? '☆'.repeat(5 - count) : '');
 }
 
+// Groups of categories shown together in one section
+const SECTION_GROUPS = [
+  { id: 'sg1', label: 'NEW ARRIVALS', alt: false,
+    cats: ['tracksuit', 'cadet', 'box-tees', 'Cap'] },
+  // { id: 'sg2', label: 'FRESH DROPS', alt: true,
+  //   cats: ['outerwear', 'headwear', 'shorts'] },
+  // { id: 'sg3', label: 'FULL FIT', alt: false,
+  //   cats: ['sets'] },
+];
+
 /**
- * Build the HTML string for a single product card.
- * Inline onclick handlers pass the full product object as JSON
- * so no global lookup is required.
+ * Build the hero card for one category.
+ * The category name is shown as a label at the top of the card.
  */
-function makeProductCard(product) {
-  const inCart    = isInCart(product.id);
-  const waMessage = encodeURIComponent(`I'd like to order ${product.name} (${formatPrice(product.price)})`);
+function makeCategoryCard(cat) {
+  const hero    = cat.products[0];
+  const inCart  = isInCart(hero.id);
+  const hasMore = cat.products.length > 1;
 
-  return `
-    <div class="pcard rv">
+  const dots = hasMore
+    ? cat.products.map((p, i) =>
+        `<button class="pvar-dot${i === 0 ? ' active' : ''}"
+           title="${p.color || p.name}"
+           onclick="event.stopPropagation();openVariantPanel('${cat.id}',${i})"
+           aria-label="View ${p.color || p.name}"
+           style="background-image:url('${p.image}')"></button>`
+      ).join('')
+    : '';
 
-      <!-- Image / placeholder area -->
-      <div class="pcard-img">
-        <img src="${product.image}" alt="${product.name}" loading="lazy" />
-        <div class="pcard-ph"></div>
+  const variantsRow = hasMore
+    ? `<div class="pcard-variants">${dots}</div>` : '';
 
-        <!-- Badge (HOT / NEW / BESTSELLER / SOON) -->
-        <span class="pbadge ${badgeClass(product.bc)}">${product.badge}</span>
+  const heroJson = JSON.stringify(hero).replace(/'/g, "\'");
 
-        <!-- Quick-add / remove button (top-right corner) -->
-        <button
-          class="pcard-qadd ${inCart ? 'in-cart' : ''}"
-          data-cart-id="${product.id}"
-          onclick='handleCardToggle(${JSON.stringify(product)}, this)'
-          title="${inCart ? 'Remove from cart' : 'Add to cart'}"
-          aria-label="${inCart ? 'Remove from cart' : 'Add to cart'}"
-        >
-          ${inCart ? SVG_CHECK : SVG_PLUS}
+  return `<div class="pcard rv"
+    onclick="openVariantPanel('${cat.id}',0)"
+    tabindex="0" role="button"
+    aria-label="View ${cat.title}"
+    onkeydown="if(event.key==='Enter')openVariantPanel('${cat.id}',0)">
+
+    <div class="pcard-cat-label">
+      <span class="pcard-cat-num">${cat.num}</span>
+      <span class="pcard-cat-title">${cat.title}</span>
+    </div>
+
+    <div class="pcard-img">
+      <img src="${hero.image}" alt="${hero.name}" loading="lazy" />
+      <span class="pbadge ${badgeClass(hero.bc)}">${hero.badge}</span>
+      ${hasMore ? `<div class="pcard-more-chip">${cat.products.length} styles</div>` : ''}
+      <button class="pcard-qadd${inCart ? ' in-cart' : ''}"
+        data-cart-id="${hero.id}"
+        onclick="event.stopPropagation();handleCardToggle(JSON.parse(this.dataset.p))"
+        data-p='${JSON.stringify(hero)}'
+        title="${inCart ? 'Remove from cart' : 'Add to cart'}"
+        aria-label="${inCart ? 'Remove from cart' : 'Add to cart'}">
+        ${inCart ? SVG_CHECK : SVG_PLUS}
+      </button>
+    </div>
+
+    <div class="pcard-body">
+      <p class="pcard-tag">${hero.tag}</p>
+      <h3 class="pcard-name">${hero.name}</h3>
+      <div>
+        <span class="pcard-stars">${starString(hero.stars)}</span>
+        <span class="pcard-rc">(${hero.rev})</span>
+      </div>
+      ${variantsRow}
+      <div class="pcard-foot">
+        <span class="pcard-price">${formatPrice(hero.price)}</span>
+        <button class="pcard-explore-btn"
+          onclick="event.stopPropagation();openVariantPanel('${cat.id}',0)">
+          View Styles
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
-
-      <!-- Card body -->
-      <div class="pcard-body">
-        <p class="pcard-tag">${product.tag}</p>
-        <h3 class="pcard-name">${product.name}</h3>
-
-        <div>
-          <span class="pcard-stars">${starString(product.stars)}</span>
-          <span class="pcard-rc">(${product.rev})</span>
-        </div>
-
-        <div class="pcard-foot">
-          <span class="pcard-price">${formatPrice(product.price)}</span>
-
-          <div class="pcard-actions">
-            <!-- WhatsApp direct order — real business number -->
-            <a
-              href="https://wa.me/${WA_NUMBER}?text=${waMessage}"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="btn-wa-sm"
-              aria-label="Order ${product.name} on WhatsApp"
-            >
-              ${SVG_WA_SMALL} Order
-            </a>
-
-            <!-- Cart toggle (small) -->
-            <button
-              class="btn-cart-sm ${inCart ? 'in-cart' : ''}"
-              data-cart-id="${product.id}"
-              onclick='handleCardToggle(${JSON.stringify(product)}, this)'
-              aria-label="${inCart ? 'Remove from cart' : 'Add to cart'}"
-            >
-              ${inCart ? SVG_CHECK : SVG_CART}
-              <span class="sm-lbl">${inCart ? 'In Cart ✓' : 'Add'}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-    </div>`;
+    </div>
+  </div>`;
 }
 
-/**
- * Handle a click on any product-card cart button.
- * Toggles the cart and then refreshes every button for that product.
- */
-function handleCardToggle(product, _buttonEl) {
-  toggleCart(product, null);
-
-  // Sync all elements that track this product's cart state
-  document.querySelectorAll(`[data-cart-id="${product.id}"]`).forEach((el) => {
-    const inC = isInCart(product.id);
-    el.classList.toggle('in-cart', inC);
-
-    if (el.classList.contains('pcard-qadd')) {
-      el.innerHTML = inC ? SVG_CHECK : SVG_PLUS;
-      el.title = inC ? 'Remove from cart' : 'Add to cart';
-    }
-
-    if (el.classList.contains('btn-cart-sm')) {
-      el.innerHTML = (inC ? SVG_CHECK : SVG_CART) +
-        `<span class="sm-lbl">${inC ? 'In Cart ✓' : 'Add'}</span>`;
-    }
-  });
-
-  updateNavDot();
-  renderCartDrawer();
+function handleCardToggle(product) {
+  toggleCart(product);
 }
 
 
 /* =============================================================
-   6. SECTION RENDERING
+   6. VARIANT PANEL
    ============================================================= */
 
-/**
- * Inject all category sections into #sroot.
- * Each category becomes a <section> with its own product grid.
- */
-function renderSections() {
-  const arrowSvg = `
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <line x1="5" y1="12" x2="19" y2="12"/>
-      <polyline points="12 5 19 12 12 19"/>
-    </svg>`;
+let panelCurrentCatId    = null;
+let panelCurrentVarIndex = 0;
 
-  document.getElementById('sroot').innerHTML = CATEGORIES.map((cat) => `
-    <section id="${cat.id}" class="cat-sec${cat.alt ? ' alt' : ''}">
-      <div class="pw">
-
-        <div class="cat-hd rv">
-          <div>
-            <p class="cat-num">— ${cat.num}</p>
-            <h2 class="cat-title">${cat.title}</h2>
-          </div>
-          <a href="#waitlist" class="see-all">
-            See All ${arrowSvg}
-          </a>
-        </div>
-
-        <div class="pgrid">
-          ${cat.products.map(makeProductCard).join('')}
-        </div>
-
-      </div>
-    </section>
-  `).join('');
+function openVariantPanel(catId, varIndex) {
+  const cat = CATEGORIES.find(c => c.id === catId);
+  if (!cat) return;
+  panelCurrentCatId    = catId;
+  panelCurrentVarIndex = varIndex;
+  renderVariantPanel(cat, varIndex);
+  document.getElementById('vp-overlay').classList.add('open');
+  document.getElementById('variant-panel').classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
 
-/**
- * Inject UGC community photos into #ugc-grid.
- */
+function closeVariantPanel() {
+  document.getElementById('vp-overlay').classList.remove('open');
+  document.getElementById('variant-panel').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function switchVariant(varIndex) {
+  if (!panelCurrentCatId) return;
+  const cat = CATEGORIES.find(c => c.id === panelCurrentCatId);
+  if (!cat) return;
+  panelCurrentVarIndex = varIndex;
+  renderVariantPanel(cat, varIndex);
+}
+
+function renderVariantPanel(cat, varIndex) {
+  const product = cat.products[varIndex];
+  const inCart  = isInCart(product.id);
+  const waMsg   = encodeURIComponent('Hi 2krazzy! I want to order: ' + product.name + ' — ' + formatPrice(product.price));
+
+  const thumbs = cat.products.map((p, i) =>
+    `<button class="vp-thumb${i === varIndex ? ' active' : ''}"
+       onclick="switchVariant(${i})"
+       title="${p.color || p.name}"
+       aria-label="View ${p.color || p.name}">
+       <img src="${p.image}" alt="${p.name}" loading="lazy" />
+       <span class="vp-thumb-lbl">${p.color || (i + 1)}</span>
+     </button>`
+  ).join('');
+
+  const panel = document.getElementById('variant-panel');
+  panel.innerHTML =
+    `<div class="vp-head">
+       <button class="vp-back" onclick="closeVariantPanel()" aria-label="Close">
+         ${SVG_ARROW_LEFT}<span>Back</span>
+       </button>
+       <p class="vp-cat-label">${cat.title}</p>
+       <button class="vp-close" onclick="closeVariantPanel()" aria-label="Close">${SVG_CLOSE}</button>
+     </div>
+
+     <div class="vp-body">
+       <div class="vp-img-wrap" onclick="openLightbox('${product.image}', '${product.name}')" title="Click to view full image">
+         <img src="${product.image}" alt="${product.name}" class="vp-main-img" />
+         <span class="vp-badge pbadge ${badgeClass(product.bc)}">${product.badge}</span>
+         <div class="vp-img-zoom-hint">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+           View full image
+         </div>
+       </div>
+
+       ${cat.products.length > 1
+         ? `<div class="vp-thumbs-section">
+              <p class="vp-thumbs-label">Available Styles</p>
+              <div class="vp-thumbs">${thumbs}</div>
+            </div>`
+         : ''}
+
+       <div class="vp-info">
+         <div class="vp-info-top">
+           <div>
+             <p class="vp-tag">${product.tag}</p>
+             <h2 class="vp-name">${product.name}</h2>
+           </div>
+           <div class="vp-price">${formatPrice(product.price)}</div>
+         </div>
+
+         <div class="vp-stars-row">
+           <span class="vp-stars">${starString(product.stars)}</span>
+           <span class="vp-rev-ct">(${product.rev} reviews)</span>
+         </div>
+
+         ${product.color
+           ? `<div class="vp-colour-row">
+                <span class="vp-colour-label">Colour:</span>
+                <span class="vp-colour-val">${product.color}</span>
+              </div>`
+           : ''}
+
+         <p class="vp-desc">${product.desc || ''}</p>
+
+         <div class="vp-size-note">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+           All sizes available. Message us on WhatsApp for your perfect fit.
+         </div>
+       </div>
+     </div>
+
+     <div class="vp-foot">
+       <a href="https://wa.me/${WA_NUMBER}?text=${waMsg}" target="_blank" rel="noopener noreferrer" class="vp-wa-btn">
+         <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-wa"/></svg>
+         Order via WhatsApp
+       </a>
+       <button class="vp-cart-btn${inCart ? ' in-cart' : ''}"
+         id="vp-cart-btn"
+         data-cart-id="${product.id}"
+         data-p='${JSON.stringify(product)}'
+         onclick="toggleCart(JSON.parse(this.dataset.p))">
+         ${inCart ? SVG_CHECK : SVG_CART}
+         <span class="vp-cart-lbl">${inCart ? 'In Cart ✓' : 'Add to Cart'}</span>
+       </button>
+     </div>`;
+}
+
+function syncPanelCartBtn() {
+  const btn = document.getElementById('vp-cart-btn');
+  if (!btn) return;
+  const inC = isInCart(btn.dataset.cartId);
+  btn.classList.toggle('in-cart', inC);
+  const lbl = btn.querySelector('.vp-cart-lbl');
+  if (lbl) lbl.textContent = inC ? 'In Cart ✓' : 'Add to Cart';
+}
+
+
+/* =============================================================
+   7. SECTION RENDERING
+   Categories are grouped 2-3 per section.
+   ============================================================= */
+
+function renderSections() {
+  const arrowSvg = `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
+
+  // Build a map for quick lookup
+  const catMap = {};
+  CATEGORIES.forEach(c => { catMap[c.id] = c; });
+
+  const html = SECTION_GROUPS.map((grp) => {
+    const cats = grp.cats.map(id => catMap[id]).filter(Boolean);
+    return `
+      <section id="${grp.id}" class="cat-sec${grp.alt ? ' alt' : ''}">
+        <div class="pw">
+          <div class="cat-hd rv">
+            <h2 class="cat-title">${grp.label}</h2>
+          </div>
+          <div class="pgrid pgrid-group">
+            ${cats.map(cat => makeCategoryCard(cat)).join('')}
+          </div>
+        </div>
+      </section>`;
+  }).join('');
+
+  document.getElementById('sroot').innerHTML = html;
+}
+
+
 function renderUGC() {
   document.getElementById('ugc-grid').innerHTML = UGC_PHOTOS.map((photo) => `
     <div class="ugc-item">
@@ -593,9 +569,6 @@ function renderUGC() {
   `).join('');
 }
 
-/**
- * Inject testimonial cards into #testi-track.
- */
 function renderTestimonials() {
   document.getElementById('testi-track').innerHTML = REVIEWS.map((review) => `
     <div class="testi-card">
@@ -612,48 +585,74 @@ function renderTestimonials() {
 
 
 /* =============================================================
-   7. TOAST NOTIFICATIONS
+   8. TOAST NOTIFICATIONS
    ============================================================= */
 
 let toastTimer;
 
-/**
- * Show a toast message that automatically dismisses after 3.2 s.
- * Clears any previous timer so rapid calls don't stack.
- */
 function showToast(message) {
-  const toastEl  = document.getElementById('toast');
+  const toastEl   = document.getElementById('toast');
   const messageEl = document.getElementById('tmsg');
-
   messageEl.textContent = message;
   toastEl.classList.add('show');
-
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), 3200);
 }
 
 
 /* =============================================================
-   8. TESTIMONIAL SLIDER
+   9. TESTIMONIAL SLIDER
    ============================================================= */
 
 let testimonialIndex = 0;
+let testiAutoTimer   = null;
+const TESTI_INTERVAL = 4500;
 
-/**
- * Slide the testimonial track to the current index.
- * Clamps the index so we never scroll past the last visible card.
- */
-function slideTestimonials() {
+function renderTestimonialsInfinite() {
+  // Render cards TWICE so we can seamlessly loop
+  const track = document.getElementById('testi-track');
+  if (!track) return;
+  const single = REVIEWS.map((review) => `
+    <div class="testi-card">
+      <div class="testi-quote">"</div>
+      <p class="testi-text">${review.text}</p>
+      <div class="testi-stars">${'★'.repeat(review.stars)}</div>
+      <div class="testi-author">
+        <span class="testi-name">${review.name}</span>
+        <span class="testi-role">${review.role}</span>
+      </div>
+    </div>`).join('');
+  // Two copies for seamless wrap
+  track.innerHTML = single + single;
+}
+
+function getCardWidth() {
   const track = document.getElementById('testi-track');
   const card  = track.querySelector('.testi-card');
-  if (!card) return;
+  if (!card) return 360;
+  return card.offsetWidth + 20;
+}
 
-  const cardWidth = card.offsetWidth + 20; // 20 = gap
-  const visibleCount = Math.floor(track.parentElement.offsetWidth / cardWidth);
-  const maxIndex = Math.max(0, REVIEWS.length - visibleCount);
-
-  testimonialIndex = Math.min(testimonialIndex, maxIndex);
-  track.style.transform = `translateX(-${testimonialIndex * cardWidth}px)`;
+function slideTestimonials() {
+  const track = document.getElementById('testi-track');
+  if (!track) return;
+  const cw        = getCardWidth();
+  const total     = REVIEWS.length; // one set length
+  // If we've scrolled past the first full set, jump silently back
+  if (testimonialIndex >= total) {
+    // Disable transition momentarily for the invisible jump
+    track.style.transition = 'none';
+    testimonialIndex = 0;
+    track.style.transform = `translateX(0)`;
+    // Re-enable transition on next frame
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        track.style.transition = '';
+      });
+    });
+    return;
+  }
+  track.style.transform = `translateX(-${testimonialIndex * cw}px)`;
 }
 
 function testiNext() {
@@ -662,44 +661,50 @@ function testiNext() {
 }
 
 function testiPrev() {
-  testimonialIndex = Math.max(0, testimonialIndex - 1);
+  const total = REVIEWS.length;
+  testimonialIndex = (testimonialIndex - 1 + total) % total;
   slideTestimonials();
+}
+
+function startTestiAuto() {
+  stopTestiAuto();
+  testiAutoTimer = setInterval(() => {
+    testimonialIndex += 1;
+    slideTestimonials();
+  }, TESTI_INTERVAL);
+}
+
+function stopTestiAuto() {
+  if (testiAutoTimer) { clearInterval(testiAutoTimer); testiAutoTimer = null; }
 }
 
 
 /* =============================================================
-   9. WAITLIST FORM
+   10. WAITLIST FORM
    ============================================================= */
 
-/**
- * Handle waitlist form submission.
- * Hides the form and reveals the success message.
- * (Wire this to a real backend when ready.)
- */
 function handleWL(event) {
   event.preventDefault();
   document.getElementById('wl-form').style.display = 'none';
   document.getElementById('wl-ok').style.display   = 'block';
-  showToast('Locked in! 🔥');
+  showToast('Locked in! Welcome to the movement.');
 }
 
 
 /* =============================================================
-   10. HAMBURGER / MOBILE MENU
+   11. HAMBURGER / MOBILE MENU
    ============================================================= */
 
-const hamburgerBtn  = document.getElementById('ham');
-const mobileMenuEl  = document.getElementById('mob-menu');
+const hamburgerBtn = document.getElementById('ham');
+const mobileMenuEl = document.getElementById('mob-menu');
 
 hamburgerBtn.addEventListener('click', () => {
   const isOpen = hamburgerBtn.classList.toggle('open');
   mobileMenuEl.classList.toggle('open', isOpen);
   hamburgerBtn.setAttribute('aria-expanded', String(isOpen));
-  // Prevent body scroll when menu is open
   document.body.style.overflow = isOpen ? 'hidden' : '';
 });
 
-/** Close the mobile menu (called by inline onclick on each link) */
 function cm() {
   hamburgerBtn.classList.remove('open');
   mobileMenuEl.classList.remove('open');
@@ -709,13 +714,12 @@ function cm() {
 
 
 /* =============================================================
-   11. THEME TOGGLE (dark ↔ light)
-   Persists the user's preference in localStorage under key '2k4'.
+   12. THEME TOGGLE
    ============================================================= */
 
-const htmlRoot  = document.documentElement;
-const moonIcon  = document.getElementById('i-moon');
-const sunIcon   = document.getElementById('i-sun');
+const htmlRoot = document.documentElement;
+const moonIcon = document.getElementById('i-moon');
+const sunIcon  = document.getElementById('i-sun');
 
 function applyTheme(isDark) {
   htmlRoot.setAttribute('data-theme', isDark ? 'dark' : 'light');
@@ -723,7 +727,6 @@ function applyTheme(isDark) {
   sunIcon.style.display  = isDark ? 'none'  : 'block';
 }
 
-// Apply saved preference on load (defaults to dark)
 applyTheme(localStorage.getItem('2k4') !== 'light');
 
 document.getElementById('theme-btn').addEventListener('click', () => {
@@ -734,9 +737,7 @@ document.getElementById('theme-btn').addEventListener('click', () => {
 
 
 /* =============================================================
-   12. SMOOTH SCROLL
-   Intercepts clicks on any anchor that points to an id on the
-   page and scrolls smoothly instead of jumping.
+   13. SMOOTH SCROLL
    ============================================================= */
 
 document.querySelectorAll("a[href^='#']").forEach((anchor) => {
@@ -751,9 +752,7 @@ document.querySelectorAll("a[href^='#']").forEach((anchor) => {
 
 
 /* =============================================================
-   13. SCROLL-REVEAL
-   Elements with class .rv, .rv-l, or .rv-r start hidden and
-   animate in when they enter the viewport.
+   14. SCROLL-REVEAL
    ============================================================= */
 
 const revealObserver = new IntersectionObserver(
@@ -761,20 +760,15 @@ const revealObserver = new IntersectionObserver(
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
         entry.target.classList.add('in');
-        revealObserver.unobserve(entry.target); // animate once only
+        revealObserver.unobserve(entry.target);
       }
     });
   },
   { threshold: 0.07, rootMargin: '0px 0px -30px 0px' }
 );
 
-/**
- * Attach the observer to every reveal element.
- * Call after renderSections() so dynamically created cards are included.
- */
 function observeRevealElements() {
   document.querySelectorAll('.rv, .rv-l, .rv-r').forEach((el, index) => {
-    // Stagger delay so cards cascade in rather than all appearing at once
     el.style.transitionDelay = `${(index % 5) * 0.08}s`;
     revealObserver.observe(el);
   });
@@ -782,52 +776,97 @@ function observeRevealElements() {
 
 
 /* =============================================================
-   14. NAVBAR SCROLL SHADOW
-   Adds a drop shadow to the navbar once the user scrolls down.
+   15. NAVBAR SCROLL SHADOW
    ============================================================= */
 
 window.addEventListener('scroll', () => {
   const nav = document.getElementById('nav');
-  nav.style.boxShadow = window.scrollY > 20
-    ? '0 4px 40px rgba(0, 0, 0, .45)'
-    : 'none';
+  nav.style.boxShadow = window.scrollY > 20 ? '0 4px 40px rgba(0,0,0,.45)' : 'none';
 }, { passive: true });
 
 
 /* =============================================================
-   15. LOGO IMAGE INJECTION
-   The base64 logo lives in a single variable below.
-   Paste the base64 string here, or replace with a file path.
-   Every <img> with an empty src that represents the logo is
-   updated at startup.
+   16. LOGO INJECTION
    ============================================================= */
 
-/**
- * Set LOGO_SRC to your actual logo path (e.g. "images/logo.png")
- * or to a data:image/... base64 string.
- * Leave as "" if you want to add images manually in the HTML.
- */
-const LOGO_SRC = ''; // ← Replace with "images/logo.png" or base64
+const LOGO_SRC = '';
 
 function injectLogos() {
   if (!LOGO_SRC) return;
-  document.querySelectorAll('.brand-mark img, .hero-orb-ring img, .feat-big-logo, .story-logo img, .f-logo-box img').forEach((img) => {
+  document.querySelectorAll('.brand-mark img, .hero-orb-ring img, .story-logo img, .f-logo-box img').forEach((img) => {
     img.src = LOGO_SRC;
   });
 }
 
 
+
+
 /* =============================================================
-   16. INITIALISATION
-   Runs once the script is parsed (at bottom of <body>).
+   LIGHTBOX — full-size image viewer
+   ============================================================= */
+
+function openLightbox(src, alt) {
+  const lb  = document.getElementById('lightbox');
+  const img = document.getElementById('lb-img');
+  img.src = src;
+  img.alt = alt || 'Product image';
+  lb.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+/* =============================================================
+   17. INITIALISATION
    ============================================================= */
 
 (function init() {
-  injectLogos();           // inject logo into all placements
-  renderSections();        // build all category product grids
-  renderUGC();             // build community photo grid
-  renderTestimonials();    // build review slider cards
-  observeRevealElements(); // attach scroll-reveal to all .rv elements
-  renderCartDrawer();      // paint the cart drawer (empty state)
-  updateNavDot();          // ensure badge starts hidden
+  // ── Progress bar animation ──
+  const bar = document.getElementById('progress-bar');
+  if (bar) {
+    let w = 0;
+    const tick = setInterval(() => {
+      w = Math.min(w + Math.random() * 18, 85);
+      bar.style.width = w + '%';
+    }, 120);
+    window.addEventListener('load', () => {
+      clearInterval(tick);
+      bar.style.width = '100%';
+      bar.classList.add('done');
+      document.body.classList.remove('page-loading');
+    });
+  }
+
+  injectLogos();
+  renderSections();
+  renderUGC();
+  renderTestimonialsInfinite();
+  observeRevealElements();
+  renderCartDrawer();
+  updateNavDot();
+
+  // Variant panel overlay click-to-close
+  document.getElementById('vp-overlay').addEventListener('click', closeVariantPanel);
+
+  // Escape key closes open panels + lightbox
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeLightbox();
+      closeVariantPanel();
+      closeCart();
+    }
+  });
+
+  // Auto-advance testimonials (infinite loop)
+  startTestiAuto();
+
+  // Pause on hover
+  const testiSlider = document.querySelector('.testi-slider');
+  if (testiSlider) {
+    testiSlider.addEventListener('mouseenter', stopTestiAuto);
+    testiSlider.addEventListener('mouseleave', startTestiAuto);
+  }
 })();
