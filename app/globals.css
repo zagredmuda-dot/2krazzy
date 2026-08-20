@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Galano Grotesque';
+  src: url('/fonts/GalanoGrotesque-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Galano Grotesque';
+  src: url('/fonts/GalanoGrotesque-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Galano Grotesque';
+  src: url('/fonts/GalanoGrotesque-Bold.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --color-ink: #0b0b0b;
+  --color-ink-2: #131313;
+  --color-ink-3: #1b1b1b;
+  --color-paper: #f4f1ea;
+  --color-red: #b3282d;
+  --color-line: rgba(244, 241, 234, 0.12);
+  --color-muted: rgba(244, 241, 234, 0.6);
+}
+
+@theme inline {
+  --color-ink: var(--color-ink);
+  --color-ink-2: var(--color-ink-2);
+  --color-ink-3: var(--color-ink-3);
+  --color-paper: var(--color-paper);
+  --color-red: var(--color-red);
+  --color-line: var(--color-line);
+  --color-muted: var(--color-muted);
+  --font-display: 'Galano Grotesque', ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-family: 'Galano Grotesque', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--color-red);
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.scroll-row::-webkit-scrollbar {
+  height: 0;
+}
+.scroll-row {
+  scrollbar-width: none;
+}
