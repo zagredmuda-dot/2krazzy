@@ -68,7 +68,7 @@ export const PRODUCTS: Product[] = [
     variants: [
       { color: 'Black', swatch: '#0a0a0a', status: 'available', images: ['/images/tee-black.jpg'] },
       { color: 'White', swatch: '#f2efe7', status: 'available', images: ['/images/tee-white.jpg'] },
-      { color: 'White', swatch: '#8c1f28', status: 'available', images: ['/images/tee-white-red.jpg'] },
+      { color: 'Red', swatch: '#8c1f28', status: 'available', images: ['/images/tee-white-red.jpg'] },
     ],
   },
 
@@ -285,7 +285,7 @@ export const PRODUCTS: Product[] = [
   // Beanies
   // ---------------------------------------------------------------
    {
-    slug: '2krazzy skeleton beanie',
+    slug: 'krazzy skeleton beanie',
     name: 'Krazzy Skeleton Beanie',
     category: 'caps',
     categoryLabel: 'Beanies',
