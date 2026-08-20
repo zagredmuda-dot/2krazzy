@@ -285,7 +285,7 @@ export const PRODUCTS: Product[] = [
   // Beanies
   // ---------------------------------------------------------------
    {
-    slug: 'krazzy skeleton beanie',
+    slug: 'krazzy-skeleton-beanie',
     name: 'Krazzy Skeleton Beanie',
     category: 'caps',
     categoryLabel: 'Beanies',
